@@ -50,7 +50,18 @@ app.post('/leave',(req,res)=>{
     });
 });
 // ---------------------------------------------------------------------------------------
-
+// get the data from database and show it in the frontend
+app.get('/leaves',(req,res)=>{
+    const sql='SELECT * FROM leaves';
+    db.query(sql,(err,result)=>{
+        if(err){
+            console.log('Error fetching data from database:', err);
+            return res.status(500).json({ error: 'Failed to fetch leaves' });
+        }
+        res.status(200).json(result);
+    });
+});
+// ---------------------------------------------------------------------------------------
 
 
 
