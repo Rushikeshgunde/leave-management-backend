@@ -181,13 +181,127 @@ const sql= `
   });
 });
 // =========================================================================================
-  // Leave Balance AP
+  
 
-// =========================================================================================
-// =========================================================================================
+// =====================================ADMIN DASHBOARD API ====================================================
+//1) app/Addemployee.js
+app.post("/addemployee",(req,res)=>{
+  const {name,email,department,position,phone,joinDate,status}=req.body;
+  const query=`
+  INSERT INTO addemployees
+  (name,email,department,position,phone,joinDate,status)
+  values(?,?,?,?,?,?,?)
+  `;
+  db.query(query,
+    [name,email,department,position,phone,joinDate,status],
+    (err,result)=>{
+      if(err){
+        console.error("DB error",err)
+        // Duplicate email error
+        if(err.code ==="ER_DUP_ENTRY"){
+          return res.status(409).json({error:"This email is already registered" })
+        }
 
+        return res.status(500).json({error:err.message})
+      }
+      res.status(201).json({message:"Employee added.."})
+    }
+  )
+})
+// =========================================================================================
+// 2) Display Employee
+app.get("/displayemployee",(req,res)=>{
+  const sql=`
+   SELECT 
+      id,
+      name,
+      email,
+      department,
+      position,
+      phone,
+      DATE_FORMAT(joinDate, '%Y-%m-%d') AS joinDate,
+      status
+    FROM addemployees
+  `;
+  db.query(sql,(err,result)=>{
+    if(err){
+      console.error('SQL error' , err)
+      return res.status(500).json({message:"server error", error:err})
+    }
+     // Add "available" field
+    //  const dataWithLeaves=result.map(emp=>({
+    //   ...emp,
+    //   leaves:{
+    //     total:emp.totalLeaves,
+    //     used:emp.usedLeaves,
+    //     available:emp.totalLeaves-emp.usedLeaves
+    //   }
+    //  })) ;
+    res.json(result)
+  });
+});
 // -------------------------------------------------------------------------------------------------
+//3) Delete Employee
+app.delete("/deleteemployee/:id",(req,res)=>{
+  const {id}=req.params;
 
+  const query="DELETE FROM addemployees WHERE id=?";
+  db.query(query, [id],(err,result)=>{
+    if(err){
+      console.error("DB error",err)
+      return res.status(500).json({error:"Database error"});
+    }
+
+    if(result.affectedRows ===0){
+      return res.status(404).json({error:"Employee not found"})
+    }
+    res.json({message:"Employee deleted Successfully"})
+  })
+})
+// =======================================================================================
+// Edit Employees.
+app.put("/editemployee/:id", (req, res) => {
+  const { id } = req.params;
+  const { name, email, department, position, phone, joinDate, status } = req.body;
+  
+
+  
+
+  const query = `
+    UPDATE addemployees
+    SET
+      name = ?,
+      email = ?,
+      department = ?,
+      position = ?,
+      phone = ?,
+      joinDate = ?,
+      status = ?
+    WHERE id = ?
+  `;
+
+  db.query(
+    query,
+    [name, email, department, position, phone,joinDate, status, id],
+    (err, result) => {
+      if (err) {
+        console.error("DB ERROR:", err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: "Employee not found" });
+      }
+
+      res.json({ message: "Employee updated successfully" });
+    }
+  );
+});
+
+
+
+// =======================================================================================
+// =======================================================================================
 // Start the server
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
